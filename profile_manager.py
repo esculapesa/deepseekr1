@@ -46,17 +46,36 @@ class ProfileManager:
     def add_pdf_to_profile(self, profile: str, pdf_path: str, pdf_name: str):
         """Add a PDF to a profile"""
         if profile in self.profiles:
-            self.profiles[profile]["pdfs"][pdf_name] = pdf_path
+            # Create a copy of the PDF in a persistent location
+            persistent_path = f"attached_assets/{profile}_{pdf_name}"
+            os.makedirs("attached_assets", exist_ok=True)
+            
+            with open(pdf_path, 'rb') as src, open(persistent_path, 'wb') as dst:
+                dst.write(src.read())
+                
+            self.profiles[profile]["pdfs"][pdf_name] = persistent_path
             self._save_profiles()
 
     def get_profile_pdfs(self, profile: str) -> List[str]:
         """Get list of PDFs in a profile"""
-        return list(self.profiles.get(profile, {}).get("pdfs", {}).keys())
+        if profile in self.profiles:
+            # Filter out PDFs whose files don't exist anymore
+            valid_pdfs = {
+                name: path 
+                for name, path in self.profiles[profile]["pdfs"].items() 
+                if os.path.exists(path)
+            }
+            self.profiles[profile]["pdfs"] = valid_pdfs
+            self._save_profiles()
+            return list(valid_pdfs.keys())
+        return []
 
     def load_pdf_from_profile(self, profile: str, pdf_name: str) -> str:
         """Load a PDF from a profile and return its local path"""
         if profile in self.profiles and pdf_name in self.profiles[profile]["pdfs"]:
-            return self.profiles[profile]["pdfs"][pdf_name]
+            path = self.profiles[profile]["pdfs"][pdf_name]
+            if os.path.exists(path):
+                return path
         return None
 
     def get_all_profiles(self) -> List[str]:
