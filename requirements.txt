@@ -10,3 +10,4 @@ replit
 replit
 replit
 replit-object-storage
+requests
