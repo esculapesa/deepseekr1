@@ -74,16 +74,24 @@ def read_and_save_file():
 
 def load_profile_pdfs():
     """Load PDFs from the selected profile."""
-    if not st.session_state["current_profile"]:
-        st.info("No profile selected")
-        return
-        
-    # Reset the assistant and messages
-    st.session_state["assistant"].clear()
-    st.session_state["messages"] = []
+    # Store previous profile to check if it changed
+    previous_profile = getattr(st.session_state, "previous_profile", None)
+    current_profile = st.session_state["current_profile"]
     
-    # Get the profile directory path
-    profile_dir = os.path.join("knowledge", st.session_state["current_profile"])
+    # Only reload if profile changed
+    if previous_profile != current_profile:
+        st.session_state["previous_profile"] = current_profile
+        
+        # Clear everything when switching profiles
+        st.session_state["assistant"].clear()
+        st.session_state["messages"] = []
+        
+        if not current_profile:
+            st.info("No profile selected")
+            return
+            
+        # Get the profile directory path
+        profile_dir = os.path.join("knowledge", current_profile)
     st.write(f"Loading profile: {st.session_state['current_profile']}")
     st.write(f"Looking in directory: {profile_dir}")
     
