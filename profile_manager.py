@@ -1,86 +1,70 @@
-
-from typing import List, Dict
+from typing import List
 import os
-import json
 
 class ProfileManager:
     def __init__(self):
-        """Initialize profiles with local dictionary and load saved data"""
-        self.profiles = {}
+        """Initialize profiles from knowledge directory"""
+        self.base_dir = "knowledge"
         self.current_profile = None
-        self.storage_path = "profiles.json"
-        self._load_profiles()
+        os.makedirs(self.base_dir, exist_ok=True)
 
-    def _load_profiles(self):
-        """Load profiles from file"""
-        if os.path.exists(self.storage_path):
-            with open(self.storage_path, 'r') as f:
-                data = json.load(f)
-                self.profiles = data.get('profiles', {})
-                self.current_profile = data.get('current_profile')
-
-    def _save_profiles(self):
-        """Save profiles to file"""
-        data = {
-            'profiles': self.profiles,
-            'current_profile': self.current_profile
-        }
-        with open(self.storage_path, 'w') as f:
-            json.dump(data, f)
+    def get_all_profiles(self) -> List[str]:
+        """Get list of all profiles (folders)"""
+        if not os.path.exists(self.base_dir):
+            return []
+        return [d for d in os.listdir(self.base_dir) 
+                if os.path.isdir(os.path.join(self.base_dir, d))]
 
     def create_profile(self, name: str):
-        """Create a new profile"""
-        if name not in self.profiles:
-            self.profiles[name] = {"pdfs": {}}  # Changed to store paths
+        """Create a new profile directory"""
+        profile_path = os.path.join(self.base_dir, name)
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
             self.current_profile = name
-            self._save_profiles()
 
-    def delete_profile(self, name: str):
-        """Delete a profile and its PDFs"""
-        if name in self.profiles:
-            del self.profiles[name]
-            if self.current_profile == name:
-                self.current_profile = None
-            self._save_profiles()
+    def get_profile_pdfs(self, profile: str) -> List[str]:
+        """Get list of PDFs in a profile directory"""
+        profile_path = os.path.join(self.base_dir, profile)
+        if not os.path.exists(profile_path):
+            return []
+        return [f for f in os.listdir(profile_path) 
+                if f.lower().endswith('.pdf')]
+
+    def get_pdf_path(self, profile: str, pdf_name: str) -> str:
+        """Get full path for a PDF in a profile"""
+        return os.path.join(self.base_dir, profile, pdf_name)
+
+    def load_profile_pdfs(self, profile: str) -> List[str]:
+        """Get full paths of all PDFs in a profile"""
+        profile_path = os.path.join(self.base_dir, profile)
+        if not os.path.exists(profile_path):
+            return []
+        return [os.path.join(profile_path, f) 
+                for f in os.listdir(profile_path) 
+                if f.lower().endswith('.pdf')]
 
     def add_pdf_to_profile(self, profile: str, pdf_path: str, pdf_name: str):
         """Add a PDF to a profile"""
-        if profile in self.profiles:
-            # Create a copy of the PDF in a persistent location
-            os.makedirs("attached_assets", exist_ok=True)
-            persistent_path = os.path.abspath(f"attached_assets/{profile}_{pdf_name}")
-            
-            # Copy the PDF file
-            with open(pdf_path, 'rb') as src:
-                pdf_content = src.read()
-            with open(persistent_path, 'wb') as dst:
-                dst.write(pdf_content)
-                
-            self.profiles[profile]["pdfs"][pdf_name] = persistent_path
-            self._save_profiles()
+        profile_path = os.path.join(self.base_dir, profile)
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
+        destination_path = os.path.join(profile_path, pdf_name)
+        
+        # Copy the PDF file
+        with open(pdf_path, 'rb') as src:
+            pdf_content = src.read()
+        with open(destination_path, 'wb') as dst:
+            dst.write(pdf_content)
 
-    def get_profile_pdfs(self, profile: str) -> List[str]:
-        """Get list of PDFs in a profile"""
-        if profile in self.profiles:
-            # Filter out PDFs whose files don't exist anymore
-            valid_pdfs = {
-                name: path 
-                for name, path in self.profiles[profile]["pdfs"].items() 
-                if os.path.exists(path)
-            }
-            self.profiles[profile]["pdfs"] = valid_pdfs
-            self._save_profiles()
-            return list(valid_pdfs.keys())
-        return []
+    def delete_profile(self, name: str):
+        """Delete a profile directory and its contents"""
+        profile_path = os.path.join(self.base_dir, name)
+        if os.path.exists(profile_path):
+            import shutil
+            shutil.rmtree(profile_path)
+            if self.current_profile == name:
+                self.current_profile = None
 
     def load_pdf_from_profile(self, profile: str, pdf_name: str) -> str:
         """Load a PDF from a profile and return its local path"""
-        if profile in self.profiles and pdf_name in self.profiles[profile]["pdfs"]:
-            path = self.profiles[profile]["pdfs"][pdf_name]
-            if os.path.exists(path):
-                return path
-        return None
-
-    def get_all_profiles(self) -> List[str]:
-        """Get list of all profiles"""
-        return list(self.profiles.keys())
+        return self.get_pdf_path(profile, pdf_name)
