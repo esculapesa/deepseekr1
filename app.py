@@ -74,31 +74,40 @@ def read_and_save_file():
 
 def load_profile_pdfs():
     """Load PDFs from the selected profile."""
-    if st.session_state["current_profile"]:
-        # Reset the assistant and messages
-        st.session_state["assistant"].clear()
-        st.session_state["messages"] = []
+    if not st.session_state["current_profile"]:
+        st.info("No profile selected")
+        return
         
-        # Get the profile directory path
-        profile_dir = os.path.join("knowledge", st.session_state["current_profile"])
+    # Reset the assistant and messages
+    st.session_state["assistant"].clear()
+    st.session_state["messages"] = []
+    
+    # Get the profile directory path
+    profile_dir = os.path.join("knowledge", st.session_state["current_profile"])
+    st.write(f"Loading profile: {st.session_state['current_profile']}")
+    st.write(f"Looking in directory: {profile_dir}")
+    
+    if not os.path.exists(profile_dir):
+        st.warning(f"Profile directory not found: {profile_dir}")
+        return
         
-        if os.path.exists(profile_dir):
-            # Get all PDF files in the profile directory
-            pdf_files = [f for f in os.listdir(profile_dir) if f.lower().endswith('.pdf')]
-            
-            if pdf_files:
-                for pdf_file in pdf_files:
-                    pdf_path = os.path.join(profile_dir, pdf_file)
-                    with st.spinner(f"Loading {pdf_file}..."):
-                        try:
-                            st.session_state["assistant"].ingest(pdf_path)
-                            st.success(f"Loaded {pdf_file}")
-                        except Exception as e:
-                            st.error(f"Failed to load {pdf_file}: {str(e)}")
-            else:
-                st.info(f"No PDFs found in profile {st.session_state['current_profile']}")
-        else:
-            st.warning(f"Profile directory not found: {profile_dir}")
+    # Get all PDF files in the profile directory
+    pdf_files = [f for f in os.listdir(profile_dir) if f.lower().endswith('.pdf')]
+    st.write(f"Found {len(pdf_files)} PDF files: {', '.join(pdf_files)}")
+    
+    if not pdf_files:
+        st.info(f"No PDFs found in profile {st.session_state['current_profile']}")
+        return
+        
+    for pdf_file in pdf_files:
+        pdf_path = os.path.join(profile_dir, pdf_file)
+        with st.spinner(f"Loading {pdf_file}..."):
+            try:
+                st.session_state["assistant"].ingest(pdf_path)
+                st.success(f"Successfully loaded {pdf_file}")
+            except Exception as e:
+                st.error(f"Failed to load {pdf_file}: {str(e)}")
+                st.error(f"Full path attempted: {pdf_path}")
 
 def page():
     """Main app page layout."""
