@@ -24,11 +24,10 @@ def commit_and_push(message="Update"):
     return True
 
 if __name__ == "__main__":
-    commit_msg = input("Enter commit message (or press Enter for default): ").strip()
-    if not commit_msg:
-        commit_msg = "Update"
+    from datetime import datetime
+    commit_msg = f"Update {datetime.now().strftime('%Y-%m-%d %H:%M')}"
     
     if commit_and_push(commit_msg):
-        print("Successfully committed and pushed changes")
+        print(f"Successfully committed and pushed changes: {commit_msg}")
     else:
         print("Failed to commit and push changes")
