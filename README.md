@@ -6,149 +6,116 @@
 
 - **PDF Upload**: Upload one or multiple PDF documents to enable question-answering across their combined content.
 - **RAG Workflow**: Combines retrieval and generation for high-quality responses.
+- **Profile Management**: Create and manage profiles to organize your PDFs (Replit-only feature).
 - **Customizable Retrieval**: Adjust the number of retrieved results (`k`) and similarity threshold to fine-tune performance.
 - **Memory Management**: Easily clear vector store and retrievers to reset the system.
 - **Streamlit Interface**: A user-friendly web application for seamless interaction.
 
----
-
 ## Installation
 
-Follow the steps below to set up and run the application:
+### Running on Replit (Recommended)
 
-### 1. Clone the Repository
+1. Fork the repository on Replit
+2. Click the Run button
+3. The application will automatically set up and start
 
+### Running Locally
+
+1. Clone the repository:
 ```bash
-git clone https://github.com/paquino11/chatpdf-rag-deepseek-r1.git
-cd chatpdf-rag-deepseek-r1
+git clone https://github.com/esculapesa/deepseekr1.git
+cd deepseekr1
 ```
 
-### 2. Create a Virtual Environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-Install the required Python packages:
-
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-Make sure to include the following packages in your `requirements.txt`:
+3. Install Ollama from https://ollama.ai
 
-```
-streamlit
-langchain
-langchain_ollama
-langchain_community
-streamlit-chat
-pypdf
-chromadb
-```
-
-### 4. Pull Required Models for Ollama
-
-To use the specified embedding and LLM models (`mxbai-embed-large` and `deepseek-r1`), download them via the `ollama` CLI:
-
+4. Pull required models:
 ```bash
 ollama pull mxbai-embed-large
 ollama pull deepseek-r1:latest
 ```
 
----
+5. Start Ollama service:
+```bash
+ollama serve
+```
 
-## Usage
+6. Create a simple `profile_manager.py` to work locally:
+```python
+class ProfileManager:
+    def __init__(self):
+        self.profiles = {}
+        self.current_profile = None
 
-### 1. Start the Application
+    def create_profile(self, name: str):
+        if name not in self.profiles:
+            self.profiles[name] = {"pdfs": []}
+            self.current_profile = name
 
-Run the Streamlit app:
+    def delete_profile(self, name: str):
+        if name in self.profiles:
+            del self.profiles[name]
+            if self.current_profile == name:
+                self.current_profile = None
 
+    def add_pdf_to_profile(self, profile: str, pdf_path: str, pdf_name: str):
+        if profile in self.profiles:
+            if pdf_name not in self.profiles[profile]["pdfs"]:
+                self.profiles[profile]["pdfs"].append(pdf_name)
+
+    def get_profile_pdfs(self, profile: str):
+        return self.profiles.get(profile, {}).get("pdfs", [])
+
+    def load_pdf_from_profile(self, profile: str, pdf_name: str):
+        if profile in self.profiles and pdf_name in self.profiles[profile]["pdfs"]:
+            return None
+
+    def get_all_profiles(self):
+        return list(self.profiles.keys())
+```
+
+7. Run the application:
 ```bash
 streamlit run app.py
 ```
 
-### 2. Upload Documents
+## Usage
 
-- Navigate to the **Upload a Document** section in the web interface.
-- Upload one or multiple PDF files to process their content.
-- Each file will be ingested automatically and confirmation messages will show processing time.
-
-### 3. Ask Questions
-
-- Type your question in the chat input box and press Enter.
-- Adjust retrieval settings (`k` and similarity threshold) in the **Settings** section for better responses.
-
-### 4. Clear Chat and Reset
-
-- Use the **Clear Chat** button to reset the chat interface.
-- Clearing the chat also resets the vector store and retriever.
-
----
+1. Select or create a profile (required)
+2. Upload PDF documents
+3. Ask questions about the content
+4. Adjust retrieval settings as needed
 
 ## Project Structure
 
 ```
 .
-├── app.py                  # Streamlit app for the user interface
-├── rag.py                  # Core RAG logic for PDF ingestion and question-answering
-├── requirements.txt        # List of required Python dependencies
-├── chroma_db/              # Local persistent vector store (auto-generated)
-└── README.md               # Project documentation
+├── app.py              # Streamlit interface
+├── rag.py             # Core RAG implementation
+├── profile_manager.py # Profile management
+└── requirements.txt   # Dependencies
 ```
-
----
-
-## Configuration
-
-You can modify the following parameters in `rag.py` to suit your needs:
-
-1. **Models**:
-   - Default LLM: `deepseek-r1:latest` (7B parameters)
-   - Default Embedding: `mxbai-embed-large` (1024 dimensions)
-   - Change these in the `ChatPDF` class constructor or when initializing the class
-   - Any Ollama-compatible model can be used by updating the `llm_model` parameter
-
-2. **Chunking Parameters**:
-   - `chunk_size=1024` and `chunk_overlap=100`
-   - Adjust for larger or smaller document splits
-
-3. **Retrieval Settings**:
-   - Adjust `k` (number of retrieved results) and `score_threshold` in `ask()` to control the quality of retrieval.
-
----
 
 ## Requirements
 
-- **Python**: 3.8+
-- **Streamlit**: Web framework for the user interface.
-- **Ollama**: For embedding and LLM models.
-- **LangChain**: Core framework for RAG.
-- **PyPDF**: For PDF document processing.
-- **ChromaDB**: Vector store for document embeddings.
-
----
+- Python 3.8+
+- Ollama
+- Streamlit
+- LangChain
+- PyPDF
+- ChromaDB
 
 ## Troubleshooting
 
-### Common Issues
+1. **NoneType Error**: Make sure you've created a profile before uploading PDFs
+2. **Ollama Connection**: Ensure Ollama is running (`ollama serve`)
+3. **Missing Models**: Run the ollama pull commands
 
-1. **Missing Models**:
-   - Ensure you've pulled the required models using `ollama pull`.
-
-2. **Vector Store Errors**:
-   - Delete the `chroma_db/` directory if you encounter dimensionality errors:
-     ```bash
-     rm -rf chroma_db/
-     ```
-
-3. **Streamlit Not Launching**:
-   - Verify dependencies are installed correctly using `pip install -r requirements.txt`.
-
----
 
 ## Future Enhancements
 
@@ -169,4 +136,3 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - [LangChain](https://github.com/hwchase17/langchain)
 - [Streamlit](https://github.com/streamlit/streamlit)
 - [Ollama](https://ollama.ai/)
-
