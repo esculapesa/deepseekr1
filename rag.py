@@ -51,7 +51,7 @@ class ChatPDF:
             # Test Ollama connection first
             import requests
             try:
-                requests.get("http://0.0.0.0:11434/api/embeddings")
+                requests.get("http://127.0.0.1:11434/api/embeddings")
             except requests.exceptions.ConnectionError:
                 raise ConnectionError("Ollama service not found. Please ensure Ollama is running on port 11434.")
 
