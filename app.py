@@ -81,10 +81,15 @@ def load_profile_pdfs():
             st.session_state["current_profile"]
         )
         if pdf_paths:
-            with st.spinner("Loading profile PDFs..."):
-                for pdf_path in pdf_paths:
-                    st.session_state["assistant"].ingest(pdf_path)
-                st.success(f"Loaded {len(pdf_paths)} PDFs from profile {st.session_state['current_profile']}")
+            for pdf_path in pdf_paths:
+                with st.spinner(f"Loading {os.path.basename(pdf_path)}..."):
+                    try:
+                        st.session_state["assistant"].ingest(pdf_path)
+                        st.success(f"Loaded {os.path.basename(pdf_path)}")
+                    except Exception as e:
+                        st.error(f"Failed to load {os.path.basename(pdf_path)}: {str(e)}")
+        else:
+            st.info(f"No PDFs found in profile {st.session_state['current_profile']}")
 
 def page():
     """Main app page layout."""
