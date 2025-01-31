@@ -47,10 +47,6 @@ def read_and_save_file():
         st.error("Please select or create a profile first")
         return
 
-    st.session_state["assistant"].clear()
-    st.session_state["messages"] = []
-    st.session_state["user_input"] = ""
-
     for file in st.session_state["file_uploader"]:
         with tempfile.NamedTemporaryFile(delete=False) as tf:
             tf.write(file.getbuffer())
@@ -98,21 +94,27 @@ def page():
             key="profile_selector"
         )
         
-        if st.session_state["current_profile"]:
-            st.session_state["assistant"].clear()
-            st.session_state["messages"] = []
+        # Only load PDFs when profile is first selected or changed
+        if ("last_profile" not in st.session_state or 
+            st.session_state.get("last_profile") != st.session_state["current_profile"]):
             
-            profile_dir = os.path.join("knowledge", st.session_state["current_profile"])
-            pdf_files = [f for f in os.listdir(profile_dir) if f.lower().endswith('.pdf')]
-            
-            for pdf_file in pdf_files:
-                pdf_path = os.path.join(profile_dir, pdf_file)
-                with st.spinner(f"Loading {pdf_file}..."):
-                    try:
-                        st.session_state["assistant"].ingest(pdf_path)
-                        st.success(f"Loaded {pdf_file}")
-                    except Exception as e:
-                        st.error(f"Error loading {pdf_file}: {str(e)}")
+            if st.session_state["current_profile"]:
+                st.session_state["assistant"].clear()
+                st.session_state["messages"] = []
+                
+                profile_dir = os.path.join("knowledge", st.session_state["current_profile"])
+                pdf_files = [f for f in os.listdir(profile_dir) if f.lower().endswith('.pdf')]
+                
+                for pdf_file in pdf_files:
+                    pdf_path = os.path.join(profile_dir, pdf_file)
+                    with st.spinner(f"Loading {pdf_file}..."):
+                        try:
+                            st.session_state["assistant"].ingest(pdf_path)
+                            st.success(f"Loaded {pdf_file}")
+                        except Exception as e:
+                            st.error(f"Error loading {pdf_file}: {str(e)}")
+                            
+            st.session_state["last_profile"] = st.session_state["current_profile"]
 
     st.subheader("Upload a Document")
     st.file_uploader(
