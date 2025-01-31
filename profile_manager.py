@@ -1,21 +1,39 @@
+
 from typing import List, Dict
 import os
+import json
 
 class ProfileManager:
     def __init__(self):
-        """Initialize profiles with local dictionary"""
+        """Initialize profiles with local dictionary and load saved data"""
         self.profiles = {}
         self.current_profile = None
+        self.storage_path = "profiles.json"
+        self._load_profiles()
+
+    def _load_profiles(self):
+        """Load profiles from file"""
+        if os.path.exists(self.storage_path):
+            with open(self.storage_path, 'r') as f:
+                data = json.load(f)
+                self.profiles = data.get('profiles', {})
+                self.current_profile = data.get('current_profile')
 
     def _save_profiles(self):
-        """No longer needed with local dictionary storage"""
-        pass
+        """Save profiles to file"""
+        data = {
+            'profiles': self.profiles,
+            'current_profile': self.current_profile
+        }
+        with open(self.storage_path, 'w') as f:
+            json.dump(data, f)
 
     def create_profile(self, name: str):
         """Create a new profile"""
         if name not in self.profiles:
-            self.profiles[name] = {"pdfs": []}
+            self.profiles[name] = {"pdfs": {}}  # Changed to store paths
             self.current_profile = name
+            self._save_profiles()
 
     def delete_profile(self, name: str):
         """Delete a profile and its PDFs"""
@@ -23,21 +41,22 @@ class ProfileManager:
             del self.profiles[name]
             if self.current_profile == name:
                 self.current_profile = None
+            self._save_profiles()
 
     def add_pdf_to_profile(self, profile: str, pdf_path: str, pdf_name: str):
         """Add a PDF to a profile"""
         if profile in self.profiles:
-            if pdf_name not in self.profiles[profile]["pdfs"]:
-                self.profiles[profile]["pdfs"].append(pdf_name)
+            self.profiles[profile]["pdfs"][pdf_name] = pdf_path
+            self._save_profiles()
 
     def get_profile_pdfs(self, profile: str) -> List[str]:
         """Get list of PDFs in a profile"""
-        return self.profiles.get(profile, {}).get("pdfs", [])
+        return list(self.profiles.get(profile, {}).get("pdfs", {}).keys())
 
     def load_pdf_from_profile(self, profile: str, pdf_name: str) -> str:
         """Load a PDF from a profile and return its local path"""
         if profile in self.profiles and pdf_name in self.profiles[profile]["pdfs"]:
-            return pdf_path #Note: This line assumes pdf_path is available in the scope.  It might need adjustment based on how pdf_path is intended to be used.
+            return self.profiles[profile]["pdfs"][pdf_name]
         return None
 
     def get_all_profiles(self) -> List[str]:
