@@ -46,17 +46,28 @@ class ChatPDF:
         """
         Ingest a PDF file, split its contents, and store the embeddings in the vector store.
         """
-        logger.info(f"Starting ingestion for file: {pdf_file_path}")
-        docs = PyPDFLoader(file_path=pdf_file_path).load()
-        chunks = self.text_splitter.split_documents(docs)
-        chunks = filter_complex_metadata(chunks)
+        try:
+            logger.info(f"Starting ingestion for file: {pdf_file_path}")
+            # Test Ollama connection first
+            import requests
+            try:
+                requests.get("http://localhost:11434/api/embeddings")
+            except requests.exceptions.ConnectionError:
+                raise ConnectionError("Ollama service not found. Please ensure Ollama is running on port 11434.")
 
-        self.vector_store = Chroma.from_documents(
-            documents=chunks,
-            embedding=self.embeddings,
-            persist_directory="chroma_db",
-        )
-        logger.info("Ingestion completed. Document embeddings stored successfully.")
+            docs = PyPDFLoader(file_path=pdf_file_path).load()
+            chunks = self.text_splitter.split_documents(docs)
+            chunks = filter_complex_metadata(chunks)
+
+            self.vector_store = Chroma.from_documents(
+                documents=chunks,
+                embedding=self.embeddings,
+                persist_directory="chroma_db",
+            )
+            logger.info("Ingestion completed. Document embeddings stored successfully.")
+        except Exception as e:
+            logger.error(f"Error during ingestion: {str(e)}")
+            raise ValueError(f"Failed to ingest document: {str(e)}")
 
     def ask(self, query: str, k: int = 5, score_threshold: float = 0.2):
         """
