@@ -9,12 +9,27 @@ from langchain.schema.runnable import RunnablePassthrough
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.prompts import ChatPromptTemplate
 import logging
+import requests
+import time
 
 set_debug(True)
 set_verbose(True)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def wait_for_ollama(max_retries=5, delay=2):
+    """Wait for Ollama server to be ready"""
+    for i in range(max_retries):
+        try:
+            response = requests.get("http://localhost:11434/api/version")
+            if response.status_code == 200:
+                logger.info("Ollama server is ready")
+                return True
+        except requests.exceptions.RequestException:
+            logger.warning(f"Ollama not ready, attempt {i+1}/{max_retries}")
+            time.sleep(delay)
+    return False
 
 
 class ChatPDF:
