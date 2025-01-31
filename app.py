@@ -1,13 +1,21 @@
-# app.py
+
 import os
 import tempfile
 import time
 import streamlit as st
 from streamlit_chat import message
 from rag import ChatPDF
+from profile_manager import ProfileManager
 
 st.set_page_config(page_title="RAG with Local DeepSeek R1")
 
+def initialize_session_state():
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+    if "assistant" not in st.session_state:
+        st.session_state["assistant"] = ChatPDF()
+    if "profile_manager" not in st.session_state:
+        st.session_state["profile_manager"] = ProfileManager()
 
 def display_messages():
     """Display the chat history."""
@@ -15,7 +23,6 @@ def display_messages():
     for i, (msg, is_user) in enumerate(st.session_state["messages"]):
         message(msg, is_user=is_user, key=str(i))
     st.session_state["thinking_spinner"] = st.empty()
-
 
 def process_input():
     """Process the user input and generate an assistant response."""
@@ -34,9 +41,12 @@ def process_input():
         st.session_state["messages"].append((user_text, True))
         st.session_state["messages"].append((agent_text, False))
 
-
 def read_and_save_file():
     """Handle file upload and ingestion."""
+    if not st.session_state["current_profile"]:
+        st.error("Please select or create a profile first")
+        return
+
     st.session_state["assistant"].clear()
     st.session_state["messages"] = []
     st.session_state["user_input"] = ""
@@ -49,6 +59,12 @@ def read_and_save_file():
         with st.session_state["ingestion_spinner"], st.spinner(f"Ingesting {file.name}..."):
             t0 = time.time()
             st.session_state["assistant"].ingest(file_path)
+            # Save to profile
+            st.session_state["profile_manager"].add_pdf_to_profile(
+                st.session_state["current_profile"],
+                file_path,
+                file.name
+            )
             t1 = time.time()
 
         st.session_state["messages"].append(
@@ -56,14 +72,45 @@ def read_and_save_file():
         )
         os.remove(file_path)
 
+def load_profile_pdfs():
+    """Load PDFs from the selected profile."""
+    if st.session_state["current_profile"]:
+        st.session_state["assistant"].clear()
+        pdfs = st.session_state["profile_manager"].get_profile_pdfs(
+            st.session_state["current_profile"]
+        )
+        for pdf in pdfs:
+            local_path = st.session_state["profile_manager"].load_pdf_from_profile(
+                st.session_state["current_profile"],
+                pdf
+            )
+            if local_path:
+                st.session_state["assistant"].ingest(local_path)
+                os.remove(local_path)
 
 def page():
     """Main app page layout."""
-    if len(st.session_state) == 0:
-        st.session_state["messages"] = []
-        st.session_state["assistant"] = ChatPDF()
+    initialize_session_state()
 
     st.header("RAG with Local DeepSeek R1")
+
+    # Profile Management
+    st.subheader("Profile Management")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        new_profile = st.text_input("Create New Profile")
+        if st.button("Create Profile") and new_profile:
+            st.session_state["profile_manager"].create_profile(new_profile)
+            st.success(f"Created profile: {new_profile}")
+
+    with col2:
+        profiles = st.session_state["profile_manager"].get_all_profiles()
+        st.session_state["current_profile"] = st.selectbox(
+            "Select Profile",
+            [""] + profiles,
+            on_change=load_profile_pdfs
+        )
 
     st.subheader("Upload a Document")
     st.file_uploader(
@@ -94,7 +141,6 @@ def page():
     if st.button("Clear Chat"):
         st.session_state["messages"] = []
         st.session_state["assistant"].clear()
-
 
 if __name__ == "__main__":
     page()

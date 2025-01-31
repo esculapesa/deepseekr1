@@ -6,3 +6,6 @@ streamlit-chat
 pypdf
 chromadb
 langchain-core
+replit
+replit
+replit
