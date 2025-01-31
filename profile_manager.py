@@ -47,11 +47,14 @@ class ProfileManager:
         """Add a PDF to a profile"""
         if profile in self.profiles:
             # Create a copy of the PDF in a persistent location
-            persistent_path = f"attached_assets/{profile}_{pdf_name}"
             os.makedirs("attached_assets", exist_ok=True)
+            persistent_path = os.path.abspath(f"attached_assets/{profile}_{pdf_name}")
             
-            with open(pdf_path, 'rb') as src, open(persistent_path, 'wb') as dst:
-                dst.write(src.read())
+            # Copy the PDF file
+            with open(pdf_path, 'rb') as src:
+                pdf_content = src.read()
+            with open(persistent_path, 'wb') as dst:
+                dst.write(pdf_content)
                 
             self.profiles[profile]["pdfs"][pdf_name] = persistent_path
             self._save_profiles()

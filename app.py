@@ -88,8 +88,8 @@ def load_profile_pdfs():
                         pdf
                     )
                     if local_path:
-                        st.session_state["assistant"].ingest(local_path)
-                        os.remove(local_path)
+                        if os.path.exists(local_path):
+                            st.session_state["assistant"].ingest(local_path)
                 st.success(f"Loaded {len(pdfs)} PDFs from profile {st.session_state['current_profile']}")
 
 def page():
