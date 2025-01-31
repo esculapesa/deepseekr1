@@ -76,17 +76,21 @@ def load_profile_pdfs():
     """Load PDFs from the selected profile."""
     if st.session_state["current_profile"]:
         st.session_state["assistant"].clear()
+        st.session_state["messages"] = []
         pdfs = st.session_state["profile_manager"].get_profile_pdfs(
             st.session_state["current_profile"]
         )
-        for pdf in pdfs:
-            local_path = st.session_state["profile_manager"].load_pdf_from_profile(
-                st.session_state["current_profile"],
-                pdf
-            )
-            if local_path:
-                st.session_state["assistant"].ingest(local_path)
-                os.remove(local_path)
+        if pdfs:
+            with st.spinner("Loading profile PDFs..."):
+                for pdf in pdfs:
+                    local_path = st.session_state["profile_manager"].load_pdf_from_profile(
+                        st.session_state["current_profile"],
+                        pdf
+                    )
+                    if local_path:
+                        st.session_state["assistant"].ingest(local_path)
+                        os.remove(local_path)
+                st.success(f"Loaded {len(pdfs)} PDFs from profile {st.session_state['current_profile']}")
 
 def page():
     """Main app page layout."""
