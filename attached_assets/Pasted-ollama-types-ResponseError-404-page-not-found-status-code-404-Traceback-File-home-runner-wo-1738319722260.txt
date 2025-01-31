@@ -1,0 +1,40 @@
+ollama._types.ResponseError: 404 page not found (status code: 404)
+Traceback:
+
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 541, in code_to_exec
+    self._session_state.on_script_will_rerun(
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/state/safe_session_state.py", line 66, in on_script_will_rerun
+    self._state.on_script_will_rerun(latest_widget_states)
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/state/session_state.py", line 559, in on_script_will_rerun
+    self._call_callbacks()
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/state/session_state.py", line 572, in _call_callbacks
+    self._new_widget_state.call_callback(wid)
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/streamlit/runtime/state/session_state.py", line 273, in call_callback
+    callback(*args, **kwargs)
+File "/home/runner/workspace/app.py", line 61, in read_and_save_file
+    st.session_state["assistant"].ingest(file_path)
+File "/home/runner/workspace/rag.py", line 54, in ingest
+    self.vector_store = Chroma.from_documents(
+                        ^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/langchain_community/vectorstores/chroma.py", line 887, in from_documents
+    return cls.from_texts(
+           ^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/langchain_community/vectorstores/chroma.py", line 843, in from_texts
+    chroma_collection.add_texts(
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/langchain_community/vectorstores/chroma.py", line 277, in add_texts
+    embeddings = self._embedding_function.embed_documents(texts)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/langchain_ollama/embeddings.py", line 237, in embed_documents
+    embedded_docs = self._client.embed(
+                    ^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/ollama/_client.py", line 357, in embed
+    return self._request(
+           ^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/ollama/_client.py", line 178, in _request
+    return cls(**self._request_raw(*args, **kwargs).json())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/ollama/_client.py", line 122, in _request_raw
+    raise ResponseError(e.response.text, e.response.status_code) from None
